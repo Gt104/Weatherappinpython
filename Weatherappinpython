@@ -1,5 +1,9 @@
 import requests
+
+from typing import Optional, Dict, List
+=======
 from typing import Optional, Dict
+
 
 from typing import Optional, Dict, List
 from collections import defaultdict, Counter
@@ -12,6 +16,16 @@ from typing import Optional, Dict
 API_KEY = "YOUR_API_KEY"  # Replace with your OpenWeatherMap API key
 CURRENT_WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
 FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
+
+
+
+# ----------------- Weather Functions -----------------
+def get_current_weather(city: str) -> Optional[Dict]:
+    """Fetch current weather data for a city."""
+    params = {"q": city, "appid": API_KEY, "units": "metric"}
+    try:
+        response = requests.get(CURRENT_WEATHER_URL, params=params, timeout=5)
+=======
 
 
 # Default temperature unit
@@ -126,12 +140,64 @@ def get_weather(city: str) -> Optional[Dict]:
     params = {"q": city, "appid": API_KEY, "units": "metric"}
     try:
         response = requests.get(BASE_URL, params=params, timeout=5)
+
         response.raise_for_status()
         return response.json()
     except requests.RequestException:
         return None
 
 
+
+def get_forecast(city: str) -> Optional[List[Dict]]:
+    """Fetch 3-day forecast data for a city (every 3 hours)."""
+    params = {"q": city, "appid": API_KEY, "units": "metric"}
+    try:
+        response = requests.get(FORECAST_URL, params=params, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        # Only take the next 24 hours, 8 entries = 24 hours (3h interval)
+        return data.get("list", [])[:24]
+    except requests.RequestException:
+        return None
+
+
+def show_current_weather(data: Optional[Dict]) -> None:
+    """Display current weather information."""
+    if not data:
+        print("City not found or API request failed.\n")
+        return
+
+    city = data.get("name", "Unknown")
+    main = data.get("main", {})
+    wind = data.get("wind", {})
+    weather_desc = data.get("weather", [{}])[0].get("description", "N/A").title()
+
+    temp = main.get("temp", "N/A")
+    feels_like = main.get("feels_like", "N/A")
+    humidity = main.get("humidity", "N/A")
+    wind_speed = wind.get("speed", "N/A")
+
+    print(f"\nCurrent Weather for {city}")
+    print(f"Temperature: {temp}°C")
+    print(f"Feels Like: {feels_like}°C")
+    print(f"Humidity: {humidity}%")
+    print(f"Wind Speed: {wind_speed} m/s")
+    print(f"Condition: {weather_desc}\n")
+
+
+def show_forecast(forecast_list: Optional[List[Dict]]) -> None:
+    """Display 3-day forecast information."""
+    if not forecast_list:
+        print("Forecast data not available.\n")
+        return
+
+    print("3-Day Forecast:")
+    for entry in forecast_list:
+        dt_txt = entry.get("dt_txt", "N/A")
+        main = entry.get("main", {})
+        wind = entry.get("wind", {})
+        weather_desc = entry.get("weather", [{}])[0].get("description", "N/A").title()
+=======
 
 def show_weather(data: Optional[Dict]) -> None:
     """
@@ -154,10 +220,17 @@ def show_weather(data: Optional[Dict]) -> None:
         wind = data.get("wind", {})
         weather_desc = data.get("weather", [{}])[0].get("description", "N/A").title()
 
+
         temp = main.get("temp", "N/A")
         feels_like = main.get("feels_like", "N/A")
         humidity = main.get("humidity", "N/A")
         wind_speed = wind.get("speed", "N/A")
+
+
+        print(f"{dt_txt} | Temp: {temp}°C | Feels Like: {feels_like}°C | "
+              f"Humidity: {humidity}% | Wind: {wind_speed} m/s | Condition: {weather_desc}")
+    print()
+=======
 =======
         temp = data.get("main", {}).get("temp", "N/A")
         humidity = data.get("main", {}).get("humidity", "N/A")
@@ -182,8 +255,12 @@ def main() -> None:
 
 
 
+
 # ----------------- Main Program -----------------
 def main() -> None:
+
+    """Main program loop for Weather App with forecast."""
+=======
 
     """Main program loop for Weather App with daily forecast."""
     print("=== 🌦 WEATHER APP ===")
@@ -196,6 +273,7 @@ def main() -> None:
     """
     Main program loop for the Weather App.
     """
+
     print("=== WEATHER APP ===")
 
     while True:
@@ -204,6 +282,17 @@ def main() -> None:
             print("👋 Goodbye!")
             break
         if not city:
+
+            print("Please enter a valid city name.")
+            continue
+
+        current_data = get_current_weather(city)
+        forecast_data = get_forecast(city)
+
+        show_current_weather(current_data)
+        show_forecast(forecast_data)
+
+=======
 
             print("Please enter a valid city name.")
 =======
@@ -223,6 +312,7 @@ def main() -> None:
             continue
         data = get_weather(city)
         show_weather(data)
+
 
 
 
