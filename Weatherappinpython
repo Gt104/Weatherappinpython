@@ -1,9 +1,22 @@
 import requests
-from typing import Optional, Dict, List
 
+from typing import Optional, Dict, List
+=======
+from typing import Optional, Dict
+
+
+from typing import Optional, Dict, List
+from collections import defaultdict, Counter
+from datetime import datetime
+=======
+from typing import Optional, Dict
+
+
+# ----------------- Configuration -----------------
 API_KEY = "YOUR_API_KEY"  # Replace with your OpenWeatherMap API key
 CURRENT_WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
 FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
+
 
 
 # ----------------- Weather Functions -----------------
@@ -12,10 +25,127 @@ def get_current_weather(city: str) -> Optional[Dict]:
     params = {"q": city, "appid": API_KEY, "units": "metric"}
     try:
         response = requests.get(CURRENT_WEATHER_URL, params=params, timeout=5)
+=======
+
+
+# Default temperature unit
+UNITS = {"1": "metric", "2": "imperial"}  # Metric = Celsius, Imperial = Fahrenheit
+
+
+# ----------------- Weather Functions -----------------
+def get_current_weather(city: str, unit: str = "metric") -> Optional[Dict]:
+    """Fetch current weather data for a city."""
+    params = {"q": city, "appid": API_KEY, "units": unit}
+    try:
+        response = requests.get(CURRENT_WEATHER_URL, params=params, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        print(f"⚠ Error fetching current weather: {e}")
+        return None
+
+
+def get_forecast(city: str, unit: str = "metric") -> Optional[List[Dict]]:
+    """Fetch 3-day forecast data for a city."""
+    params = {"q": city, "appid": API_KEY, "units": unit}
+    try:
+        response = requests.get(FORECAST_URL, params=params, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("list", [])
+    except requests.RequestException as e:
+        print(f"⚠ Error fetching forecast: {e}")
+        return None
+
+
+def show_current_weather(data: Optional[Dict], unit: str = "metric") -> None:
+    """Display current weather information."""
+    if not data or data.get("cod") != 200:
+        print("❌ City not found or API request failed.\n")
+        return
+
+    city = data.get("name", "Unknown")
+    main = data.get("main", {})
+    wind = data.get("wind", {})
+    weather_desc = data.get("weather", [{}])[0].get("description", "N/A").title()
+
+    temp = main.get("temp", "N/A")
+    feels_like = main.get("feels_like", "N/A")
+    humidity = main.get("humidity", "N/A")
+    wind_speed = wind.get("speed", "N/A")
+
+    temp_unit = "°C" if unit == "metric" else "°F"
+    wind_unit = "m/s" if unit == "metric" else "mph"
+
+    print(f"\n🌍 Current Weather for {city}")
+    print(f"🌡 Temperature: {temp}{temp_unit} (Feels Like {feels_like}{temp_unit})")
+    print(f"💧 Humidity: {humidity}%")
+    print(f"🌬 Wind Speed: {wind_speed} {wind_unit}")
+    print(f"☁ Condition: {weather_desc}")
+    print(f"🕒 Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+
+def show_daily_forecast(forecast_list: Optional[List[Dict]], unit: str = "metric") -> None:
+    """Display 3-day forecast aggregated by day."""
+    if not forecast_list:
+        print("❌ Forecast data not available.\n")
+        return
+
+    daily_data = defaultdict(list)
+
+    for entry in forecast_list:
+        dt_txt = entry.get("dt_txt")
+        if not dt_txt:
+            continue
+        date_str = dt_txt.split(" ")[0]  # Extract YYYY-MM-DD
+        daily_data[date_str].append(entry)
+
+
+=======
+    temp_unit = "°C" if unit == "metric" else "°F"
+    wind_unit = "m/s" if unit == "metric" else "mph"
+
+    print("📅 3-Day Forecast (Daily Summary):")
+    for date_str, entries in list(daily_data.items())[:3]:
+        temps = [e["main"]["temp"] for e in entries]
+        feels = [e["main"]["feels_like"] for e in entries]
+        humidity = [e["main"]["humidity"] for e in entries]
+        wind_speeds = [e["wind"]["speed"] for e in entries]
+        conditions = [e["weather"][0]["description"].title() for e in entries]
+
+        most_common_condition = Counter(conditions).most_common(1)[0][0]
+
+        print(
+            f"{date_str} | Min: {min(temps)}{temp_unit} | Max: {max(temps)}{temp_unit} | "
+            f"Feels Like Avg: {sum(feels)/len(feels):.1f}{temp_unit} | "
+            f"Humidity Avg: {sum(humidity)/len(humidity):.1f}% | "
+            f"Wind Avg: {sum(wind_speeds)/len(wind_speeds):.1f} {wind_unit} | "
+            f"Condition: {most_common_condition}"
+        )
+    print()
+=======
+
+
+# ----------------- Weather Functions -----------------
+def get_weather(city: str) -> Optional[Dict]:
+    """
+    Fetch weather data for a given city from OpenWeatherMap API.
+
+    Args:
+        city (str): Name of the city.
+
+    Returns:
+        dict or None: JSON response if successful, None otherwise.
+    """
+    params = {"q": city, "appid": API_KEY, "units": "metric"}
+    try:
+        response = requests.get(BASE_URL, params=params, timeout=5)
+
         response.raise_for_status()
         return response.json()
     except requests.RequestException:
         return None
+
 
 
 def get_forecast(city: str) -> Optional[List[Dict]]:
@@ -67,27 +197,92 @@ def show_forecast(forecast_list: Optional[List[Dict]]) -> None:
         main = entry.get("main", {})
         wind = entry.get("wind", {})
         weather_desc = entry.get("weather", [{}])[0].get("description", "N/A").title()
+=======
+
+def show_weather(data: Optional[Dict]) -> None:
+    """
+    Display detailed weather information.
+
+=======
+
+def show_weather(data: Optional[Dict]) -> None:
+    """
+    Display weather information.
+
+
+    Args:
+        data (dict or None): Weather data dictionary.
+    """
+    if data:
+        city = data.get("name", "Unknown")
+
+        main = data.get("main", {})
+        wind = data.get("wind", {})
+        weather_desc = data.get("weather", [{}])[0].get("description", "N/A").title()
+
 
         temp = main.get("temp", "N/A")
         feels_like = main.get("feels_like", "N/A")
         humidity = main.get("humidity", "N/A")
         wind_speed = wind.get("speed", "N/A")
 
+
         print(f"{dt_txt} | Temp: {temp}°C | Feels Like: {feels_like}°C | "
               f"Humidity: {humidity}% | Wind: {wind_speed} m/s | Condition: {weather_desc}")
     print()
+=======
+=======
+        temp = data.get("main", {}).get("temp", "N/A")
+        humidity = data.get("main", {}).get("humidity", "N/A")
+        condition = data.get("weather", [{}])[0].get("description", "N/A").title()
+
+
+        print(f"\n🌤️ Weather Report for {city}")
+        print(f"Temperature: {temp}°C")
+        print(f"Feels Like: {feels_like}°C")
+        print(f"Humidity: {humidity}%")
+        print(f"Wind Speed: {wind_speed} m/s")
+        print(f"Condition: {weather_desc}\n")
+    else:
+
+        print("\nCity not found or API request failed. Please try again.\n")
 
 
 # ----------------- Main Program -----------------
 def main() -> None:
+=======
+        print("\n❌ City not found or API request failed. Please try again.\n")
+
+
+
+
+# ----------------- Main Program -----------------
+def main() -> None:
+
     """Main program loop for Weather App with forecast."""
+=======
+
+    """Main program loop for Weather App with daily forecast."""
+    print("=== 🌦 WEATHER APP ===")
+    print("Choose Units:\n1. Metric (°C, m/s)\n2. Imperial (°F, mph)")
+    choice = input("Enter choice (1 or 2): ").strip()
+    unit = UNITS.get(choice, "metric")
+
+=======
+
+    """
+    Main program loop for the Weather App.
+    """
+
     print("=== WEATHER APP ===")
+
     while True:
         city = input("Enter city name (or 'exit' to quit): ").strip()
         if city.lower() == "exit":
-            print("Goodbye!")
+            print("👋 Goodbye!")
             break
         if not city:
+
             print("Please enter a valid city name.")
             continue
 
@@ -96,6 +291,32 @@ def main() -> None:
 
         show_current_weather(current_data)
         show_forecast(forecast_data)
+
+=======
+
+            print("Please enter a valid city name.")
+=======
+
+            print("⚠ Please enter a valid city name.")
+            continue
+
+        current_data = get_current_weather(city, unit)
+        forecast_data = get_forecast(city, unit)
+
+        show_current_weather(current_data, unit)
+        show_daily_forecast(forecast_data, unit)
+
+=======
+            print("⚠️ Please enter a valid city name.")
+
+            continue
+        data = get_weather(city)
+        show_weather(data)
+
+
+
+
+=======
 
 
 if __name__ == "__main__":
