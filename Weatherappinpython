@@ -1,38 +1,68 @@
 import requests
+from typing import Optional, Dict
 
 API_KEY = "YOUR_API_KEY"  # Replace with your OpenWeatherMap API key
 BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
-def get_weather(city):
+
+# ----------------- Weather Functions -----------------
+def get_weather(city: str) -> Optional[Dict]:
+    """
+    Fetch weather data for a given city from OpenWeatherMap API.
+
+    Args:
+        city (str): Name of the city.
+
+    Returns:
+        dict or None: JSON response if successful, None otherwise.
+    """
     params = {"q": city, "appid": API_KEY, "units": "metric"}
-    response = requests.get(BASE_URL, params=params)
-    if response.status_code == 200:
+    try:
+        response = requests.get(BASE_URL, params=params, timeout=5)
+        response.raise_for_status()
         return response.json()
-    return None
+    except requests.RequestException:
+        return None
 
-def show_weather(data):
+
+def show_weather(data: Optional[Dict]) -> None:
+    """
+    Display weather information.
+
+    Args:
+        data (dict or None): Weather data dictionary.
+    """
     if data:
-        city = data["name"]
-        temp = data["main"]["temp"]
-        humidity = data["main"]["humidity"]
-        condition = data["weather"][0]["description"].title()
+        city = data.get("name", "Unknown")
+        temp = data.get("main", {}).get("temp", "N/A")
+        humidity = data.get("main", {}).get("humidity", "N/A")
+        condition = data.get("weather", [{}])[0].get("description", "N/A").title()
 
-        print(f"\nWeather Report for {city}")
+        print(f"\n🌤️ Weather Report for {city}")
         print(f"Temperature: {temp}°C")
         print(f"Humidity: {humidity}%")
         print(f"Condition: {condition}\n")
     else:
-        print("\nCity not found. Please try again.\n")
+        print("\n❌ City not found or API request failed. Please try again.\n")
 
-def main():
+
+# ----------------- Main Program -----------------
+def main() -> None:
+    """
+    Main program loop for the Weather App.
+    """
     print("=== WEATHER APP ===")
     while True:
         city = input("Enter city name (or 'exit' to quit): ").strip()
         if city.lower() == "exit":
-            print("Goodbye!")
+            print("👋 Goodbye!")
             break
+        if not city:
+            print("⚠️ Please enter a valid city name.")
+            continue
         data = get_weather(city)
         show_weather(data)
+
 
 if __name__ == "__main__":
     main()
