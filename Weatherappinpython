@@ -1,4 +1,5 @@
 import requests
+from typing import Optional, Dict
 
 from typing import Optional, Dict, List
 from collections import defaultdict, Counter
@@ -85,6 +86,8 @@ def show_daily_forecast(forecast_list: Optional[List[Dict]], unit: str = "metric
         date_str = dt_txt.split(" ")[0]  # Extract YYYY-MM-DD
         daily_data[date_str].append(entry)
 
+
+=======
     temp_unit = "°C" if unit == "metric" else "°F"
     wind_unit = "m/s" if unit == "metric" else "mph"
 
@@ -108,6 +111,7 @@ def show_daily_forecast(forecast_list: Optional[List[Dict]], unit: str = "metric
     print()
 =======
 
+
 # ----------------- Weather Functions -----------------
 def get_weather(city: str) -> Optional[Dict]:
     """
@@ -128,24 +132,52 @@ def get_weather(city: str) -> Optional[Dict]:
         return None
 
 
+
+def show_weather(data: Optional[Dict]) -> None:
+    """
+    Display detailed weather information.
+
+=======
+
 def show_weather(data: Optional[Dict]) -> None:
     """
     Display weather information.
+
 
     Args:
         data (dict or None): Weather data dictionary.
     """
     if data:
         city = data.get("name", "Unknown")
+
+        main = data.get("main", {})
+        wind = data.get("wind", {})
+        weather_desc = data.get("weather", [{}])[0].get("description", "N/A").title()
+
+        temp = main.get("temp", "N/A")
+        feels_like = main.get("feels_like", "N/A")
+        humidity = main.get("humidity", "N/A")
+        wind_speed = wind.get("speed", "N/A")
+=======
         temp = data.get("main", {}).get("temp", "N/A")
         humidity = data.get("main", {}).get("humidity", "N/A")
         condition = data.get("weather", [{}])[0].get("description", "N/A").title()
 
+
         print(f"\n🌤️ Weather Report for {city}")
         print(f"Temperature: {temp}°C")
+        print(f"Feels Like: {feels_like}°C")
         print(f"Humidity: {humidity}%")
-        print(f"Condition: {condition}\n")
+        print(f"Wind Speed: {wind_speed} m/s")
+        print(f"Condition: {weather_desc}\n")
     else:
+
+        print("\nCity not found or API request failed. Please try again.\n")
+
+
+# ----------------- Main Program -----------------
+def main() -> None:
+=======
         print("\n❌ City not found or API request failed. Please try again.\n")
 
 
@@ -160,6 +192,7 @@ def main() -> None:
     unit = UNITS.get(choice, "metric")
 
 =======
+
     """
     Main program loop for the Weather App.
     """
@@ -172,6 +205,9 @@ def main() -> None:
             break
         if not city:
 
+            print("Please enter a valid city name.")
+=======
+
             print("⚠ Please enter a valid city name.")
             continue
 
@@ -183,10 +219,14 @@ def main() -> None:
 
 =======
             print("⚠️ Please enter a valid city name.")
+
             continue
         data = get_weather(city)
         show_weather(data)
 
+
+
+=======
 
 
 if __name__ == "__main__":
